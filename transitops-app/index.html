@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TransitOps — Smart Transport Operations Platform</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===================== LOGIN VIEW ===================== -->
+  <div id="login-view" class="login-screen">
+    <div class="login-left">
+      <div class="login-logo">
+        <div class="logo-mark"></div>
+        <div class="logo-text">TransitOps</div>
+      </div>
+      <div class="login-tagline">Smart Transport Operations Platform</div>
+      <div class="login-roles">
+        <div class="login-roles-title">One login, Four roles:</div>
+        <ul>
+          <li>Fleet Manager</li>
+          <li>Dispatcher</li>
+          <li>Safety Officer</li>
+          <li>Financial Analyst</li>
+        </ul>
+      </div>
+      <div class="login-footer">TRANSITOPS © 2026 · RBAC Edition</div>
+    </div>
+    <div class="login-right">
+      <form id="login-form" class="login-card">
+        <h1>Sign in to your account</h1>
+        <p class="muted">Enter your credentials to continue</p>
+
+        <div id="login-error" class="banner banner-error" style="display:none;"></div>
+
+        <label>Email</label>
+        <input id="login-email" type="email" placeholder="raven@transitops.io" required />
+
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" required />
+
+        <label>Role (RBAC)</label>
+        <select id="login-role">
+          <option value="Fleet Manager">Fleet Manager</option>
+          <option value="Dispatcher">Dispatcher</option>
+          <option value="Safety Officer">Safety Officer</option>
+          <option value="Financial Analyst">Financial Analyst</option>
+        </select>
+
+        <div class="login-row">
+          <label class="checkbox-label"><input type="checkbox" checked /> Remember me</label>
+          <a href="#" class="link-muted">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+
+        <p class="login-hint">
+          Access is scoped by role after login:<br/>
+          • Fleet Manager → Fleet, Maintenance<br/>
+          • Dispatcher → Dashboard, Trips<br/>
+          • Safety Officer → Drivers, Compliance<br/>
+          • Financial Analyst → Fuel & Expenses, Analytics
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== APP SHELL ===================== -->
+  <div id="app-shell" class="app-shell" style="display:none;">
+    <aside class="sidebar">
+      <div class="sidebar-logo">TransitOps</div>
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <input class="search-input" placeholder="Search..." />
+        <div class="topbar-right">
+          <span id="topbar-user" class="topbar-user"></span>
+          <span id="topbar-role" class="role-badge"></span>
+          <button id="logout-btn" class="btn btn-ghost btn-sm">Logout</button>
+        </div>
+      </header>
+      <main id="page-content" class="page-content"></main>
+    </div>
+  </div>
+
+  <!-- Modal root -->
+  <div id="modal-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/screens.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
