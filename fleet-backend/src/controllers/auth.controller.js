@@ -19,7 +19,7 @@ const login = asyncHandler(async (req, res) => {
 
   const { data: user, error } = await supabase
     .from(TABLES.USERS)
-    .select('id, email, password_hash, name, role')
+    .select('id, email, password_hash, name, role_id, roles ( name )')
     .eq('email', email.toLowerCase().trim())
     .maybeSingle();
 
@@ -29,7 +29,10 @@ const login = asyncHandler(async (req, res) => {
   const passwordValid = await bcrypt.compare(password, user.password_hash);
   if (!passwordValid) throw new ApiError(401, 'Invalid email or password');
 
-  const payload = { sub: user.id, email: user.email, role: user.role };
+  const roleName = user.roles?.name;
+  if (!roleName) throw new ApiError(500, 'User has no role assigned');
+
+  const payload = { sub: user.id, email: user.email, role: roleName };
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
 
@@ -48,7 +51,7 @@ const login = asyncHandler(async (req, res) => {
     data: {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: roleName },
     },
   });
 });
@@ -102,14 +105,17 @@ const refresh = asyncHandler(async (req, res) => {
 const me = asyncHandler(async (req, res) => {
   const { data: user, error } = await supabase
     .from(TABLES.USERS)
-    .select('id, email, name, role')
+    .select('id, email, name, role_id, roles ( name )')
     .eq('id', req.user.id)
     .maybeSingle();
 
   if (error) throw new ApiError(500, 'Failed to load user', error.message);
   if (!user) throw new ApiError(404, 'User not found');
 
-  return res.status(200).json({ success: true, data: user });
+  return res.status(200).json({
+    success: true,
+    data: { id: user.id, email: user.email, name: user.name, role: user.roles?.name },
+  });
 });
 
 module.exports = { login, logout, refresh, me };

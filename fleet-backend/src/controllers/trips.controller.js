@@ -41,7 +41,7 @@ const getTripById = asyncHandler(async (req, res) => {
 
 // POST /trips -> creates a Draft trip
 const createTrip = asyncHandler(async (req, res) => {
-  const { vehicle_id, driver_id, origin, destination, scheduled_at } = req.body;
+  const { vehicle_id, driver_id, origin, destination, scheduled_at, cargo_weight, planned_distance } = req.body;
 
   if (!origin || !destination) {
     throw new ApiError(400, 'origin and destination are required');
@@ -55,6 +55,8 @@ const createTrip = asyncHandler(async (req, res) => {
       origin,
       destination,
       scheduled_at: scheduled_at || null,
+      cargo_weight: cargo_weight ?? null,
+      planned_distance: planned_distance ?? null,
       status: 'Draft',
     })
     .select()
@@ -92,13 +94,19 @@ const dispatchTrip = asyncHandler(async (req, res) => {
   // Confirm vehicle + driver are actually available before assigning them.
   const { data: vehicle, error: vErr } = await supabase
     .from(TABLES.VEHICLES)
-    .select('id, status')
+    .select('id, status, capacity')
     .eq('id', finalVehicleId)
     .maybeSingle();
   if (vErr) throw new ApiError(500, 'Failed to fetch vehicle', vErr.message);
   if (!vehicle) throw new ApiError(404, 'Vehicle not found');
   if (vehicle.status !== 'Available') {
     throw new ApiError(409, 'Selected vehicle is not Available');
+  }
+  if (vehicle.capacity != null && trip.cargo_weight != null && trip.cargo_weight > vehicle.capacity) {
+    throw new ApiError(
+      409,
+      `Capacity exceeded: cargo ${trip.cargo_weight}kg > vehicle capacity ${vehicle.capacity}kg`
+    );
   }
 
   const { data: driver, error: dErr } = await supabase
@@ -143,6 +151,7 @@ const dispatchTrip = asyncHandler(async (req, res) => {
 // POST /trips/:id/complete
 const completeTrip = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { actual_distance, fuel_consumed, final_odometer } = req.body;
 
   const { data: trip, error: fetchError } = await supabase
     .from(TABLES.TRIPS)
@@ -160,18 +169,37 @@ const completeTrip = asyncHandler(async (req, res) => {
 
   const { data: updatedTrip, error: updateError } = await supabase
     .from(TABLES.TRIPS)
-    .update({ status: 'Completed', completed_at: nowIso, updated_at: nowIso })
+    .update({
+      status: 'Completed',
+      completed_at: nowIso,
+      updated_at: nowIso,
+      actual_distance: actual_distance ?? null,
+      fuel_consumed: fuel_consumed ?? null,
+      final_odometer: final_odometer ?? null,
+    })
     .eq('id', id)
     .select()
     .single();
 
   if (updateError) throw new ApiError(400, 'Failed to complete trip', updateError.message);
 
+  const vehicleUpdate = { status: 'Available', updated_at: nowIso };
+  if (final_odometer != null) vehicleUpdate.odometer = final_odometer;
+
   await Promise.all([
     trip.vehicle_id &&
-      supabase.from(TABLES.VEHICLES).update({ status: 'Available', updated_at: nowIso }).eq('id', trip.vehicle_id),
+      supabase.from(TABLES.VEHICLES).update(vehicleUpdate).eq('id', trip.vehicle_id),
     trip.driver_id &&
       supabase.from(TABLES.DRIVERS).update({ status: 'Available', updated_at: nowIso }).eq('id', trip.driver_id),
+    trip.vehicle_id && fuel_consumed
+      ? supabase.from(TABLES.FUEL_LOGS).insert({
+          vehicle_id: trip.vehicle_id,
+          liters: fuel_consumed,
+          cost: Math.round(fuel_consumed * 75),
+          odometer: final_odometer ?? null,
+          logged_at: nowIso,
+        })
+      : null,
   ]);
 
   return res.status(200).json({ success: true, data: updatedTrip });

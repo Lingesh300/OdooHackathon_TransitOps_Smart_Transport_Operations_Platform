@@ -58,7 +58,7 @@ const getVehicleById = asyncHandler(async (req, res) => {
 
 // POST /vehicles
 const createVehicle = asyncHandler(async (req, res) => {
-  const { name, plate_number, type, region, status } = req.body;
+  const { name, plate_number, type, region, status, capacity, odometer, acq_cost } = req.body;
 
   if (!name || !plate_number || !type) {
     throw new ApiError(400, 'name, plate_number and type are required');
@@ -72,6 +72,9 @@ const createVehicle = asyncHandler(async (req, res) => {
       type,
       region: region || null,
       status: status || 'Available',
+      capacity: capacity ?? null,
+      odometer: odometer ?? 0,
+      acq_cost: acq_cost ?? null,
     })
     .select()
     .single();
