@@ -7,6 +7,7 @@ const asyncHandler = require('../utils/asyncHandler');
 // Returns cost-per-liter and total consumption per vehicle. If your fuel_logs
 // table has an `odometer` reading, this also derives distance covered between
 // consecutive logs so you can compute km/liter on the frontend.
+
 const getFuelEfficiency = asyncHandler(async (req, res) => {
   const { data, error } = await supabase
     .from(TABLES.FUEL_LOGS)
@@ -128,6 +129,7 @@ const getOperationalCost = asyncHandler(async (req, res) => {
 // `revenue` column on the trips table. If that column doesn't exist in your
 // schema, revenue will simply be treated as 0 — add the column or point this
 // at wherever you track trip/contract revenue.
+
 const getRoi = asyncHandler(async (req, res) => {
   const { data: trips, error: tErr } = await supabase
     .from(TABLES.TRIPS)
